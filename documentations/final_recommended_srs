@@ -1,0 +1,2463 @@
+
+# SOFTWARE REQUIREMENTS SPECIFICATION (SRS)
+
+## NIMR INTEGRATED NCD MANAGEMENT SYSTEM
+
+**System Name:** NIMR Integrated NCD Management System
+**Host Organization:** National Institute for Medical Research (NIMR)
+**Country:** United Republic of Tanzania
+**System Type:** Clinical NCD Management and Monitoring Platform
+**Initial NCDs:** Diabetes, Cardiovascular/Cardiac Diseases, Sickle Cell Disease
+**Architecture:** Modular Monolith, extensible toward Microservices
+**Primary Users:** NIMR, participating hospitals/facilities, clinicians, NCD coordinators, laboratory staff, pharmacy staff, data managers and authorized administrators
+**Version:** 1.0
+
+---
+
+# 1. INTRODUCTION
+
+## 1.1 Purpose
+
+The NIMR Integrated NCD Management System is a centralized platform for managing Non-Communicable Disease services across participating hospitals and health facilities in Tanzania.
+
+The system will support the complete patient lifecycle from registration and screening through clinical assessment, diagnosis, treatment, follow-up, monitoring and outcomes.
+
+The platform will initially support:
+
+1. Diabetes
+2. Cardiovascular/Cardiac Diseases
+3. Sickle Cell Disease
+
+The system shall be designed so that additional NCDs can be introduced without redesigning the core platform.
+
+Potential future diseases include:
+
+* Hypertension
+* Chronic Kidney Disease
+* Cancer
+* Asthma
+* Chronic Obstructive Pulmonary Disease
+* Epilepsy
+* Other chronic conditions
+
+---
+
+# 2. SYSTEM OWNERSHIP AND HOSTING
+
+The system will be hosted and managed under the **National Institute for Medical Research (NIMR)**.
+
+NIMR will be the principal system owner and platform administrator.
+
+Hospitals and health facilities will participate as service-delivery facilities within the NIMR-hosted platform.
+
+There is therefore no requirement for a generic multi-organization hierarchy.
+
+The system will instead use:
+
+```text
+NIMR
+ │
+ └── Tanzania
+      │
+      └── NIMR Operational Zone
+           │
+           └── Region
+                │
+                └── District
+                     │
+                     └── Hospital / Facility
+```
+
+The geographical structure shall support reporting and access control.
+
+---
+
+# 3. SYSTEM OBJECTIVES
+
+The system shall:
+
+1. Digitize NCD screening and management.
+2. Provide a centralized longitudinal patient record.
+3. Support multiple NCD conditions for one patient.
+4. Standardize NCD clinical workflows.
+5. Support laboratory investigations.
+6. Support ECG services.
+7. Support echocardiography.
+8. Support radiology/imaging.
+9. Support pharmacy and medication management.
+10. Support enterprise-wide inventory management.
+11. Support scheduled and unscheduled patient encounters.
+12. Provide configurable follow-up scheduling.
+13. Support automatic, manual and hybrid scheduling.
+14. Support disease-specific protocols.
+15. Provide facility-to-national reporting.
+16. Provide disease-specific reporting.
+17. Enforce geographical access restrictions.
+18. Enforce disease and module access restrictions.
+19. Maintain comprehensive audit trails.
+20. Support future NCD expansion.
+
+---
+
+# 4. SYSTEM SCOPE
+
+## 4.1 Core Clinical Modules
+
+The platform shall include:
+
+* Patient Management
+* Registration
+* Appointments
+* Encounters
+* Triage
+* Consultation
+* Clinical Assessment
+* Diagnoses
+* Orders/Requests
+* Referrals
+* Follow-up
+
+## 4.2 NCD Modules
+
+* NCD Programs
+* Disease Management
+* NCD Screening
+* Risk Assessment
+* Clinical Assessment
+* Treatment Management
+* Follow-up
+* Outcomes
+
+## 4.3 Clinical Service Modules
+
+* Laboratory
+* ECG
+* Echocardiography
+* Radiology/Imaging
+* Pharmacy
+* Inventory
+
+## 4.4 Administrative Modules
+
+* Users
+* Roles
+* Access Control
+* Facility Management
+* Disease Configuration
+* Protocol Configuration
+* Reporting
+* Notifications
+* Audit
+
+---
+
+# 5. HIGH-LEVEL SYSTEM ARCHITECTURE
+
+```text
+                         NIMR NCD PLATFORM
+                                │
+          ┌─────────────────────┼─────────────────────┐
+          │                     │                     │
+       PATIENTS                 NCD                 REPORTING
+          │                  MANAGEMENT                 │
+          │                     │                     │
+          │          ┌──────────┼──────────┐           │
+          │          │          │          │           │
+          │       Diabetes    Cardiac   Sickle Cell    │
+          │                                             │
+          └───────────────────┬─────────────────────────┘
+                              │
+                       CLINICAL CORE
+                              │
+        ┌─────────┬──────────┼──────────┬──────────┐
+        │         │          │          │          │
+    Encounter   Triage   Consultation Diagnosis  Orders
+                                           │
+                       ┌───────────────────┼───────────────────┐
+                       │                   │                   │
+                  Laboratory             ECG                 Echo
+                       │                   │                   │
+                       └───────────────────┼───────────────────┘
+                                           │
+                                       Radiology
+                                           │
+                                       Pharmacy
+                                           │
+                                       Inventory
+                                           │
+                                   FOLLOW-UP ENGINE
+                                           │
+                                   ACCESS CONTROL
+                                           │
+                         ┌─────────────────┴─────────────────┐
+                         │                                   │
+                  Geographic Scope                     Clinical Scope
+                         │                                   │
+              Facility/District/Region             Disease/Module/Role
+                  Zone/Country                         + Actions
+```
+
+---
+
+# 6. CORE ARCHITECTURAL PRINCIPLE
+
+The system shall separate:
+
+### Clinical Services
+
+from:
+
+### NCD Disease Workflows.
+
+For example, laboratory services shall not be duplicated for Diabetes, Cardiac Disease and Sickle Cell.
+
+Instead:
+
+```text
+Diabetes
+    │
+    └── Laboratory Request
+              │
+              └── Laboratory Module
+
+Cardiac
+    │
+    └── ECG Request
+              │
+              └── ECG Module
+
+Sickle Cell
+    │
+    └── Laboratory Request
+              │
+              └── Laboratory Module
+```
+
+The same clinical service may therefore be used by multiple NCD programs.
+
+---
+
+# 7. TANZANIA GEOGRAPHICAL AND FACILITY STRUCTURE
+
+The system shall support the following hierarchy:
+
+```text
+Country
+   │
+   └── Zone
+        │
+        └── Region
+             │
+             └── District
+                  │
+                  └── Facility / Hospital
+```
+
+## 7.1 Country
+
+Fields:
+
+* ID
+* Name
+* Code
+* Active
+
+The initial country shall be:
+
+**Tanzania**
+
+## 7.2 Zone
+
+A zone represents an NIMR/program operational grouping.
+
+Fields:
+
+* ID
+* Country
+* Name
+* Code
+* Active
+
+Zones shall be configurable because NIMR operational zones may differ from formal administrative structures.
+
+## 7.3 Region
+
+Fields:
+
+* ID
+* Zone
+* Name
+* Code
+* Active
+
+## 7.4 District
+
+Fields:
+
+* ID
+* Region
+* Name
+* Code
+* Active
+
+## 7.5 Facility/Hospital
+
+Fields:
+
+* ID
+* District
+* Facility name
+* Facility code
+* Facility type
+* Address
+* Telephone
+* Email
+* Active
+
+Examples of facility types:
+
+* National Referral Hospital
+* Regional Referral Hospital
+* District Hospital
+* Specialized Hospital
+* Health Centre
+* Other participating facility
+
+---
+
+# 8. PATIENT MANAGEMENT
+
+## 8.1 Patient Registration
+
+The system shall register patients with:
+
+* Patient ID
+* National ID where available
+* First Name
+* Middle Name
+* Last Name
+* Sex
+* Date of Birth
+* Age
+* Phone
+* Address
+* Region
+* District
+* Emergency Contact
+* Next of Kin
+* Registration Facility
+* Registration Date
+
+## 8.2 Patient Search
+
+Authorized users shall search using:
+
+* Patient ID
+* National ID
+* Name
+* Phone
+* Date of Birth
+
+Search results shall be filtered according to the user's permissions.
+
+---
+
+# 9. PATIENT LONGITUDINAL RECORD
+
+The system shall maintain a longitudinal clinical record.
+
+```text
+PATIENT CHART
+│
+├── Overview
+├── Demographics
+├── Encounters
+├── Appointments
+├── Triage / Vitals
+├── Diagnoses
+├── Laboratory
+├── ECG
+├── Echocardiography
+├── Radiology
+├── Medications
+├── NCD
+├── Follow-up
+└── Timeline
+```
+
+Disease information shall only be accessible where the user has the required disease permissions.
+
+---
+
+# 10. NCD MANAGEMENT
+
+The NCD module shall be configurable.
+
+The architecture shall use:
+
+```text
+NCD Program
+     │
+     ├── Disease
+     ├── Protocol
+     ├── Screening
+     ├── Assessment
+     ├── Diagnosis
+     ├── Treatment
+     ├── Follow-up
+     └── Outcome
+```
+
+---
+
+# 11. NCD DISEASES
+
+Initial diseases:
+
+```text
+NCD
+│
+├── Diabetes
+├── Cardiovascular / Cardiac Disease
+└── Sickle Cell Disease
+```
+
+Future diseases can be configured.
+
+The system must not require creation of a completely new application architecture for every new disease.
+
+---
+
+# 12. NCD DISEASE ENTITY
+
+Suggested fields:
+
+```text
+NCDDisease
+-------------------------
+id
+code
+name
+description
+category
+active
+created_at
+updated_at
+```
+
+---
+
+# 13. NCD PROTOCOL MANAGEMENT
+
+Each disease may have one or more protocols.
+
+Example:
+
+```text
+Diabetes
+   │
+   ├── Diabetes Protocol v1
+   └── Diabetes Protocol v2
+```
+
+Protocol fields may include:
+
+* Disease
+* Protocol Name
+* Version
+* Effective Date
+* End Date
+* Screening Rules
+* Diagnostic Criteria
+* Required Tests
+* Required Measurements
+* Treatment Requirements
+* Follow-up Rules
+* Outcome Definitions
+* Active Status
+
+Historical patient records shall remain associated with the protocol applicable at the time.
+
+---
+
+# 14. NCD SCREENING
+
+Patients may be screened for one or more diseases.
+
+A patient does not have to undergo every NCD screening.
+
+Example:
+
+```text
+Patient
+ ├── Diabetes Screening
+ └── Cardiac Screening
+```
+
+Another patient:
+
+```text
+Patient
+ └── Sickle Cell Screening
+```
+
+---
+
+# 15. SCREENING INFORMATION
+
+Disease-specific screening may include:
+
+* Symptoms
+* Risk factors
+* Family history
+* Lifestyle
+* Previous diagnosis
+* Blood pressure
+* Weight
+* Height
+* BMI
+* Pulse
+* Blood glucose
+* Other configurable measurements
+
+Screening questions shall be configurable by disease/protocol.
+
+---
+
+# 16. NCD ASSESSMENT
+
+Clinical assessment may include:
+
+* Medical history
+* Symptoms
+* Physical examination
+* Risk factors
+* Family history
+* Lifestyle
+* Medication history
+* Measurements
+* Laboratory investigations
+* ECG
+* Echocardiography
+* Radiology
+
+Disease-specific assessment requirements shall be configurable.
+
+---
+
+# 17. DIAGNOSIS MANAGEMENT
+
+The system shall support:
+
+* Suspected diagnosis
+* Confirmed diagnosis
+* Differential diagnosis
+* Primary diagnosis
+* Secondary diagnosis
+* Diagnosis date
+* Diagnosing clinician
+* Disease code
+* Diagnosis status
+
+A patient may have multiple diagnoses.
+
+---
+
+# 18. ENCOUNTER MANAGEMENT
+
+Every actual patient visit shall be represented by an Encounter.
+
+Encounter types may include:
+
+* Scheduled
+* Unscheduled
+* Follow-up
+* Screening
+* Clinical Review
+* Diagnostic Visit
+* Emergency
+* Medication Review
+
+---
+
+# 19. APPOINTMENT VS ENCOUNTER
+
+An appointment is not an encounter.
+
+```text
+Appointment
+     │
+     └── may result in
+             │
+          Encounter
+```
+
+A patient may also create an encounter without an appointment.
+
+---
+
+# 20. UNSCHEDULED ENCOUNTERS
+
+The system shall support unscheduled visits.
+
+Examples:
+
+* New symptoms
+* Complications
+* Abnormal laboratory results
+* Medication problems
+* Adverse reactions
+* Emergencies
+* Walk-ins
+* Clinical deterioration
+* Referrals
+* Patient-requested review
+
+An unscheduled encounter shall not automatically replace a scheduled follow-up visit.
+
+Example:
+
+```text
+Month 3 Scheduled Visit
+        │
+        ├── remains scheduled
+        │
+        └── Patient develops symptoms
+                  │
+                  └── Unscheduled Encounter
+```
+
+---
+
+# 21. TRIAGE
+
+Triage shall be encounter-based.
+
+Measurements may include:
+
+* Temperature
+* Blood Pressure
+* Pulse
+* Respiratory Rate
+* Oxygen Saturation
+* Weight
+* Height
+* BMI
+* Blood Glucose
+* Pain Score
+* Other configurable measurements
+
+Historical measurements shall be retained.
+
+---
+
+# 22. CONSULTATION
+
+The consultation module shall support:
+
+* Chief Complaint
+* History of Presenting Illness
+* Medical History
+* Medication History
+* Family History
+* Social History
+* Physical Examination
+* Assessment
+* Diagnosis
+* Treatment Plan
+* Follow-up Instructions
+
+---
+
+# 23. CLINICAL ORDERS
+
+Clinicians shall be able to create orders.
+
+```text
+Clinician
+    │
+    └── Order
+         ├── Laboratory
+         ├── ECG
+         ├── Echocardiography
+         ├── Radiology
+         └── Pharmacy
+```
+
+Each service module shall process its own orders.
+
+---
+
+# 24. LABORATORY MODULE
+
+Laboratory shall operate as an independent clinical service.
+
+Workflow:
+
+```text
+Laboratory Request
+       ↓
+Specimen Collection
+       ↓
+Specimen Processing
+       ↓
+Testing
+       ↓
+Result Entry
+       ↓
+Verification
+       ↓
+Final Result
+       ↓
+Patient Clinical Record
+```
+
+Functions:
+
+* Test Catalog
+* Test Groups
+* Laboratory Requests
+* Specimen Types
+* Specimen Collection
+* Specimen Processing
+* Result Entry
+* Reference Ranges
+* Abnormal Flags
+* Verification
+* Amendments
+* Laboratory Reports
+
+---
+
+# 25. ECG MODULE
+
+Workflow:
+
+```text
+ECG Request
+      ↓
+Scheduling
+      ↓
+ECG Performed
+      ↓
+Recording
+      ↓
+Interpretation
+      ↓
+Verification
+      ↓
+ECG Report
+```
+
+The system may store:
+
+* Date/time
+* Technician
+* ECG parameters
+* Interpretation
+* Recording attachment/reference
+* Clinician interpretation
+* Verification status
+
+---
+
+# 26. ECHOCARDIOGRAPHY MODULE
+
+Workflow:
+
+```text
+Echo Request
+      ↓
+Appointment
+      ↓
+Procedure
+      ↓
+Measurements
+      ↓
+Interpretation
+      ↓
+Verification
+      ↓
+Report
+```
+
+The module shall support configurable echo measurements such as:
+
+* Ejection fraction
+* Chamber measurements
+* Valve assessment
+* Wall motion
+* Doppler measurements
+* Other configured measurements
+
+---
+
+# 27. RADIOLOGY MODULE
+
+Workflow:
+
+```text
+Imaging Request
+      ↓
+Scheduling
+      ↓
+Procedure
+      ↓
+Image / Study
+      ↓
+Radiology Report
+      ↓
+Verification
+```
+
+Functions:
+
+* Imaging modalities
+* Body sites
+* Procedures
+* Requests
+* Scheduling
+* Reports
+* Verification
+* Attachments/image references
+
+---
+
+# 28. PHARMACY MODULE
+
+Workflow:
+
+```text
+Prescription
+      ↓
+Pharmacy Review
+      ↓
+Dispensing
+      ↓
+Medication Record
+```
+
+Functions:
+
+* Drug catalog
+* Prescription
+* Dosage
+* Route
+* Frequency
+* Duration
+* Quantity
+* Pharmacy review
+* Dispensing
+* Partial dispensing
+* Refills
+* Medication history
+* Medication status
+
+---
+
+# 29. INVENTORY MANAGEMENT
+
+Inventory shall be enterprise-wide and not limited to pharmacy.
+
+Inventory may include:
+
+* Medicines
+* Laboratory reagents
+* Laboratory supplies
+* Medical consumables
+* Equipment
+* Other medical supplies
+
+Functions:
+
+* Item catalog
+* Suppliers
+* Purchase orders
+* Goods receiving
+* Batch management
+* Expiry management
+* Stock movements
+* Transfers
+* Returns
+* Adjustments
+* Damaged stock
+* Stock counts
+* Reorder levels
+* Low-stock alerts
+* Expiry alerts
+
+---
+
+# 30. FOLLOW-UP MANAGEMENT ENGINE
+
+Follow-up shall be implemented as a reusable engine.
+
+```text
+Follow-up Plan
+      ↓
+Schedule Rule
+      ↓
+Scheduled Visit
+      ↓
+Clinical Encounter
+```
+
+The engine shall support all NCD diseases.
+
+---
+
+# 31. FOLLOW-UP FREQUENCIES
+
+Supported frequencies:
+
+* Daily
+* Weekly
+* Every N weeks
+* Monthly
+* Every N months
+* Quarterly
+* Yearly
+* Custom schedule
+
+Example:
+
+```text
+Baseline       Day 0
+Visit 1        Day 7
+Visit 2        Day 14
+Visit 3        Day 30
+Visit 4        Day 60
+Visit 5        Day 90
+Visit 6        Day 180
+Visit 7        Day 365
+```
+
+---
+
+# 32. FOLLOW-UP SCHEDULING MODES
+
+## Automatic
+
+The system generates visits according to predefined rules.
+
+## Manual
+
+Authorized staff create visits manually.
+
+## Hybrid
+
+The system generates future visits automatically while authorized staff can:
+
+* Reschedule
+* Add
+* Cancel
+* Skip
+* Change future frequency
+* Create unscheduled encounters
+
+---
+
+# 33. ROLLING SCHEDULING
+
+The system shall support rolling generation.
+
+Example:
+
+```text
+Frequency = Every 1 Month
+Generate Ahead = 3 Months
+Maximum Future Visits = 3
+```
+
+Initial schedule:
+
+```text
+October
+November
+December
+```
+
+After October is completed:
+
+```text
+November
+December
+January
+```
+
+The system generates the next missing future visit.
+
+---
+
+# 34. FOLLOW-UP REFERENCE DATE
+
+The system shall support:
+
+* Baseline
+* Last completed visit
+* Custom date
+* Custom month
+
+Example:
+
+```text
+Baseline = 10 January
+Frequency = Every 3 Months
+
+10 April
+10 July
+10 October
+```
+
+---
+
+# 35. FOLLOW-UP FREQUENCY CHANGES
+
+Example:
+
+```text
+Every 3 Months
+      ↓
+Every 1 Month
+      ↓
+Every 3 Months
+```
+
+Only future scheduling shall be affected.
+
+Historical completed visits shall remain unchanged.
+
+---
+
+# 36. INDIVIDUAL VISIT MODIFICATION
+
+Authorized staff may change future visit dates.
+
+Example:
+
+```text
+Original: 15 December
+New:      20 December
+```
+
+The system shall record:
+
+* Original date
+* New date
+* User
+* Timestamp
+* Reason
+
+---
+
+# 37. FOLLOW-UP VISIT STATUS
+
+The system shall support:
+
+* Planned
+* Due
+* In Progress
+* Completed
+* Missed
+* Cancelled
+* Rescheduled
+* Not Applicable
+
+---
+
+# 38. FOLLOW-UP PLAN DATA MODEL
+
+Suggested:
+
+```text
+FollowUpPlan
+-------------------------
+id
+name
+program
+disease
+scheduling_mode
+frequency
+frequency_unit
+reference_type
+generate_ahead
+max_future_visits
+start_date
+end_date
+number_of_visits
+grace_period
+active
+```
+
+---
+
+# 39. SCHEDULED VISIT DATA MODEL
+
+Suggested:
+
+```text
+ScheduledVisit
+-------------------------
+id
+patient
+plan
+visit_type
+scheduled_date
+status
+facility
+disease
+generated_automatically
+source
+created_at
+updated_at
+```
+
+---
+
+# 40. NCD OUTCOME MANAGEMENT
+
+Possible outcomes:
+
+* Ongoing
+* Completed
+* Lost to Follow-up
+* Death
+* Transfer Out
+* Withdrawal
+
+When follow-up terminates, future visits may be marked:
+
+**Not Applicable**
+
+or:
+
+**Cancelled**
+
+with an audit trail.
+
+---
+
+# 41. NCD CONFIGURATION
+
+Each disease may configure:
+
+* Screening questions
+* Risk factors
+* Symptoms
+* Measurements
+* Laboratory requirements
+* ECG requirements
+* Echo requirements
+* Imaging requirements
+* Diagnostic criteria
+* Treatment requirements
+* Follow-up rules
+* Outcome definitions
+* Forms
+
+---
+
+# 42. ACCESS CONTROL
+
+Access control shall be based on:
+
+```text
+USER
+ │
+ ├── ROLE
+ │
+ ├── GEOGRAPHICAL / FACILITY SCOPE
+ │     ├── Country
+ │     ├── Zone
+ │     ├── Region
+ │     ├── District
+ │     └── Facility
+ │
+ ├── DISEASE SCOPE
+ │     ├── Diabetes
+ │     ├── Cardiac
+ │     ├── Sickle Cell
+ │     └── Future NCDs
+ │
+ ├── MODULE SCOPE
+ │     ├── NCD
+ │     ├── Laboratory
+ │     ├── Pharmacy
+ │     ├── ECG
+ │     ├── Echocardiography
+ │     ├── Radiology
+ │     ├── Inventory
+ │     └── Reporting
+ │
+ └── ACTION PERMISSIONS
+       ├── View
+       ├── Create
+       ├── Edit
+       ├── Verify / Approve
+       ├── Export
+       └── Configure
+```
+
+There shall be **no Study-level access control**.
+
+---
+
+# 43. ORGANIZATIONAL ACCESS LEVELS
+
+## Facility
+
+Access authorized data within assigned facility/facilities.
+
+## District
+
+Access authorized data across facilities within the district.
+
+## Region
+
+Access authorized data across districts within the region.
+
+## Zone
+
+Access authorized data across regions within the zone.
+
+## Country
+
+Access authorized national data.
+
+---
+
+# 44. DISEASE-BASED ACCESS
+
+Users may be restricted to one or more diseases.
+
+Example:
+
+```text
+Role:
+Regional Diabetes Coordinator
+
+Scope:
+Region A
+
+Disease:
+Diabetes
+```
+
+This user shall not automatically access:
+
+* Cardiac records
+* Sickle Cell records
+* Other regions
+
+unless explicitly authorized.
+
+---
+
+# 45. MODULE-BASED ACCESS
+
+Users shall only access authorized modules.
+
+Example:
+
+```text
+Laboratory Staff
+     │
+     └── Laboratory Module
+```
+
+Access to Laboratory does not automatically grant access to:
+
+* Pharmacy Administration
+* User Administration
+* NCD Configuration
+* Reporting Administration
+
+---
+
+# 46. ROLE MANAGEMENT
+
+Recommended roles:
+
+* System Administrator
+* National NCD Coordinator
+* Zonal NCD Coordinator
+* Regional NCD Coordinator
+* District NCD Coordinator
+* Hospital Administrator
+* Facility Manager
+* Doctor/Clinician
+* Nurse
+* Triage Staff
+* Laboratory Staff
+* Radiology Staff
+* ECG Technician
+* Echo Technician
+* Pharmacist
+* Data Manager
+* Data Clerk
+* Reviewer
+* Reporting Officer
+
+Roles define default permissions, while actual access is determined by the user's assigned scope and permissions.
+
+---
+
+# 47. USER ACCESS ASSIGNMENT
+
+Conceptual structure:
+
+```text
+UserAccessAssignment
+-------------------------
+user
+role
+country
+zone
+region
+district
+facility
+disease
+module
+can_view
+can_create
+can_edit
+can_approve
+can_export
+can_configure
+active
+```
+
+For implementation, this may be normalized into separate access-policy tables.
+
+---
+
+# 48. ACCESS ENFORCEMENT
+
+Access control shall apply to:
+
+* Patient search
+* Patient records
+* Encounters
+* NCD records
+* Laboratory
+* ECG
+* Echo
+* Radiology
+* Pharmacy
+* Inventory
+* Follow-up
+* Reports
+* Dashboards
+* Exports
+* APIs
+
+Access restrictions shall be enforced at the backend/data-access level and not only through the user interface.
+
+---
+
+# 49. PATIENT-LEVEL AND AGGREGATE ACCESS
+
+The system shall distinguish between:
+
+### Identifiable patient data
+
+and
+
+### Aggregate/de-identified data.
+
+A national or regional reporting user may have access to aggregate statistics without necessarily having unrestricted access to identifiable patient records.
+
+---
+
+# 50. DASHBOARDS
+
+## Facility Dashboard
+
+* Patients screened
+* New diagnoses
+* Active patients
+* Follow-up due
+* Follow-up completed
+* Missed visits
+* Laboratory workload
+* ECG workload
+* Echo workload
+* Radiology workload
+* Pharmacy utilization
+
+## District Dashboard
+
+Aggregated authorized facility data.
+
+## Regional Dashboard
+
+Aggregated authorized district data.
+
+## Zonal Dashboard
+
+Aggregated authorized regional data.
+
+## National Dashboard
+
+Aggregated authorized national data.
+
+---
+
+# 51. NCD DASHBOARD
+
+The NCD dashboard shall include:
+
+* Total screened
+* Positive screenings
+* Confirmed cases
+* Active patients
+* New cases
+* Follow-up due
+* Follow-up completed
+* Missed visits
+* Lost to follow-up
+* Transfers
+* Deaths
+* Outcomes
+* Disease trends
+
+Filters may include:
+
+* Date
+* Disease
+* Facility
+* District
+* Region
+* Zone
+* Sex
+* Age group
+
+Only authorized filter values shall be available.
+
+---
+
+# 52. DISEASE DASHBOARDS
+
+Example:
+
+```text
+DIABETES
+│
+├── Screened
+├── Positive
+├── Confirmed
+├── Active
+├── Follow-up
+├── Missed
+├── LTFU
+├── Outcomes
+└── Trends
+```
+
+Equivalent dashboards shall be configurable for:
+
+* Cardiovascular disease
+* Sickle Cell
+* Future NCDs
+
+---
+
+# 53. REPORTING
+
+## Facility Reports
+
+* Daily attendance
+* NCD screening
+* New cases
+* Follow-up
+* Missed appointments
+* Laboratory workload
+* ECG workload
+* Echo workload
+* Radiology workload
+* Pharmacy utilization
+* Inventory
+* Referrals
+
+## District Reports
+
+Aggregated facility data.
+
+## Regional Reports
+
+Aggregated district data.
+
+## Zonal Reports
+
+Aggregated regional data.
+
+## National Reports
+
+Aggregated national data.
+
+---
+
+# 54. REPORT EXPORT
+
+Authorized users may export:
+
+* CSV
+* Excel
+* PDF
+* Other configured formats
+
+All exports shall be logged.
+
+Export permissions shall follow the same access rules as normal data access.
+
+---
+
+# 55. REFERRAL MANAGEMENT
+
+The system shall support referrals between facilities.
+
+Referral fields:
+
+* Patient
+* Referring facility
+* Receiving facility
+* Referral reason
+* Diagnosis
+* Clinical summary
+* Requested service
+* Referral date
+* Status
+* Outcome
+
+Statuses:
+
+* Created
+* Sent
+* Accepted
+* Rejected
+* Completed
+* Cancelled
+
+---
+
+# 56. APPOINTMENT MANAGEMENT
+
+Appointments shall include:
+
+* Patient
+* Facility
+* Service
+* Provider
+* Date
+* Time
+* Appointment Type
+* Status
+
+Statuses:
+
+* Scheduled
+* Confirmed
+* Arrived
+* Completed
+* Missed
+* Cancelled
+* Rescheduled
+
+Appointments may generate encounters.
+
+---
+
+# 57. NOTIFICATIONS
+
+The system may provide:
+
+* Upcoming appointment reminders
+* Follow-up reminders
+* Missed appointment alerts
+* Overdue visit alerts
+* Abnormal result notifications
+* Medication refill reminders
+* Low-stock alerts
+* Expiry alerts
+* Referral notifications
+
+Channels:
+
+* SMS
+* Email
+* In-system notification
+
+---
+
+# 58. AUDIT TRAIL
+
+The system shall maintain an audit trail for important operations.
+
+Audit events include:
+
+* Patient creation
+* Patient modification
+* Diagnosis changes
+* Laboratory result changes
+* ECG changes
+* Echo changes
+* Radiology changes
+* Medication changes
+* Follow-up changes
+* Visit rescheduling
+* Frequency changes
+* Outcome changes
+* User creation
+* Permission changes
+* Access grants
+* Access revocation
+* Data exports
+
+Audit fields:
+
+```text
+User
+Timestamp
+Action
+Object
+Old Value
+New Value
+Reason
+IP Address
+Device Information
+```
+
+---
+
+# 59. DATA CORRECTION
+
+## Future record with no clinical data
+
+May be edited or deleted according to authorization.
+
+## Record containing clinical data
+
+Should be protected.
+
+## Completed clinical record
+
+Should not normally be physically deleted.
+
+Corrections should use:
+
+* Amendment
+* Versioning
+* Void/Correction
+* Audit trail
+
+---
+
+# 60. SECURITY REQUIREMENTS
+
+The system shall implement:
+
+* Secure authentication
+* Password policies
+* Role-based authorization
+* Geographic scope authorization
+* Disease-level authorization
+* Module-level authorization
+* Action-level authorization
+* HTTPS
+* CSRF protection
+* Input validation
+* API authentication
+* Audit logging
+* Secure password storage
+* Database security
+* Backup protection
+* Session management
+* Access monitoring
+
+---
+
+# 61. API REQUIREMENTS
+
+The system should provide APIs for authorized integrations.
+
+Potential integrations:
+
+* Laboratory systems
+* Hospital systems
+* Pharmacy systems
+* National health platforms
+* SMS gateways
+* Email services
+* Reporting systems
+* Mobile applications
+
+API requests shall enforce the same access-control rules as the web application.
+
+---
+
+# 62. DATABASE REQUIREMENTS
+
+Recommended database:
+
+**PostgreSQL**
+
+Requirements:
+
+* Referential integrity
+* Foreign keys
+* Transactions
+* Constraints
+* Indexing
+* Historical records
+* Audit support
+* High-volume clinical data
+* Reporting performance
+
+---
+
+# 63. HIGH-LEVEL DATA MODEL
+
+```text
+Country
+   │
+   └── Zone
+        │
+        └── Region
+             │
+             └── District
+                  │
+                  └── Facility
+                       │
+                       └── Patient
+                            │
+                            ├── Encounter
+                            │    ├── Triage
+                            │    ├── Consultation
+                            │    ├── Diagnosis
+                            │    └── Orders
+                            │
+                            ├── NCD Management
+                            │    ├── Disease
+                            │    ├── Screening
+                            │    ├── Assessment
+                            │    ├── Diagnosis
+                            │    ├── Treatment
+                            │    ├── Follow-up
+                            │    └── Outcome
+                            │
+                            ├── Laboratory
+                            ├── ECG
+                            ├── Echocardiography
+                            ├── Radiology
+                            ├── Prescriptions
+                            └── Medication
+```
+
+---
+
+# 64. RECOMMENDED DJANGO APPLICATION STRUCTURE
+
+```text
+apps/
+│
+├── core/
+├── users/
+├── access_control/
+├── geography/
+├── facilities/
+├── patients/
+├── registration/
+├── appointments/
+├── encounters/
+├── triage/
+├── clinical/
+├── diagnoses/
+├── orders/
+│
+├── laboratory/
+├── ecg/
+├── echocardiography/
+├── radiology/
+├── pharmacy/
+├── inventory/
+│
+├── ncd/
+│   ├── diseases/
+│   ├── protocols/
+│   ├── screening/
+│   ├── assessments/
+│   ├── treatment/
+│   ├── followup/
+│   └── outcomes/
+│
+├── referrals/
+├── reporting/
+├── notifications/
+└── audit/
+```
+
+This structure supports a modular monolith while preserving clear domain boundaries.
+
+---
+
+# 65. FUNCTIONAL REQUIREMENTS SUMMARY
+
+| Module         | Main Functions                         |
+| -------------- | -------------------------------------- |
+| Geography      | Country, Zone, Region, District        |
+| Facilities     | Hospitals and participating facilities |
+| Patients       | Registration, search, demographics     |
+| Encounters     | Scheduled and unscheduled visits       |
+| Appointments   | Scheduling and attendance              |
+| Triage         | Vitals and measurements                |
+| Clinical       | Consultation and clinical notes        |
+| Diagnosis      | Disease diagnosis and history          |
+| Orders         | Clinical service requests              |
+| Laboratory     | Tests, specimens, results              |
+| ECG            | ECG requests and interpretation        |
+| Echo           | Echo procedures and reporting          |
+| Radiology      | Imaging and reporting                  |
+| Pharmacy       | Prescription and dispensing            |
+| Inventory      | Stock and supplies                     |
+| NCD            | Screening, assessment, treatment       |
+| Follow-up      | Automatic/manual/hybrid scheduling     |
+| Referrals      | Facility-to-facility referrals         |
+| Reporting      | Facility to national reporting         |
+| Notifications  | Clinical/operational alerts            |
+| Access Control | Geography, disease, module, role       |
+| Audit          | Traceability and accountability        |
+
+---
+
+# 66. NON-FUNCTIONAL REQUIREMENTS
+
+## Performance
+
+The system should provide:
+
+* Fast patient search
+* Efficient dashboards
+* Optimized database queries
+* Pagination
+* Background processing
+* Efficient reporting
+
+## Scalability
+
+The platform shall support growth in:
+
+* Patients
+* Facilities
+* Users
+* Encounters
+* Laboratory records
+* NCD records
+* Reports
+
+## Availability
+
+Production deployment should support:
+
+* Automated backups
+* Disaster recovery
+* Database recovery
+* Application monitoring
+* Error logging
+* Service monitoring
+
+## Maintainability
+
+The system shall use:
+
+* Modular Django applications
+* Reusable services
+* Clear domain boundaries
+* Automated testing
+* Version control
+* Technical documentation
+
+---
+
+# 67. BACKGROUND PROCESSING
+
+Asynchronous processing shall be used for operations such as:
+
+* Large report generation
+* Data exports
+* SMS
+* Email
+* Follow-up reminders
+* Automatic visit generation
+* Data aggregation
+* Scheduled maintenance
+
+Celery with Redis may be used.
+
+---
+
+# 68. FOLLOW-UP AUTOMATION ALGORITHM
+
+The system shall periodically:
+
+```text
+1. Identify active follow-up plans
+2. Identify patients under each plan
+3. Determine reference date
+4. Find existing future visits
+5. Calculate generation window
+6. Calculate maximum future visits
+7. Generate missing visits
+8. Prevent duplicates
+9. Never modify completed visits
+10. Apply current scheduling rules
+11. Record audit information
+```
+
+---
+
+# 69. ACCESS-CONTROL FLOW
+
+Every request shall conceptually follow:
+
+```text
+User
+ ↓
+Authentication
+ ↓
+Role
+ ↓
+Geographical Scope
+ ↓
+Disease Scope
+ ↓
+Module Scope
+ ↓
+Action Permission
+ ↓
+Authorized Data
+```
+
+Example:
+
+```text
+Regional Diabetes Coordinator
+          ↓
+Region = Region A
+          ↓
+Disease = Diabetes
+          ↓
+Module = NCD
+          ↓
+Action = View/Edit
+          ↓
+Authorized Diabetes records
+within Region A
+```
+
+---
+
+# 70. USER ACCESS EXAMPLES
+
+## Facility Diabetes Clinician
+
+```text
+Role:
+Doctor / Clinician
+
+Scope:
+Facility A
+
+Disease:
+Diabetes
+
+Modules:
+NCD
+Encounters
+Laboratory
+Pharmacy
+
+Actions:
+View
+Create
+Edit
+```
+
+## Regional Diabetes Coordinator
+
+```text
+Role:
+Regional NCD Coordinator
+
+Scope:
+Region A
+
+Disease:
+Diabetes
+
+Modules:
+NCD
+Reporting
+
+Actions:
+View
+Create
+Edit
+Export
+```
+
+## National NCD Coordinator
+
+```text
+Role:
+National NCD Coordinator
+
+Scope:
+Country
+
+Disease:
+All NCDs
+
+Modules:
+NCD
+Reporting
+
+Actions:
+View
+Create
+Edit
+Export
+```
+
+## Laboratory Staff
+
+```text
+Role:
+Laboratory Staff
+
+Scope:
+Facility A
+
+Module:
+Laboratory
+
+Actions:
+View
+Create
+Edit
+Verify
+```
+
+---
+
+# 71. UI/UX REQUIREMENTS
+
+The system shall display navigation according to the user's permissions.
+
+Recommended navigation:
+
+```text
+Dashboard
+
+Patients
+
+Appointments
+
+Encounters
+   ├── Scheduled
+   └── Unscheduled
+
+NCD
+   ├── Screening
+   ├── Diabetes
+   ├── Cardiac
+   ├── Sickle Cell
+   └── Follow-up
+
+Clinical Services
+   ├── Laboratory
+   ├── ECG
+   ├── Echocardiography
+   └── Radiology
+
+Pharmacy
+
+Inventory
+
+Referrals
+
+Reports
+
+Administration
+```
+
+Unauthorized modules shall not be displayed or accessible.
+
+---
+
+# 72. PATIENT CHART UI
+
+Recommended:
+
+```text
+PATIENT
+
+Overview | Encounters | NCD | Laboratory |
+ECG | Echo | Radiology | Medications | Timeline
+```
+
+NCD:
+
+```text
+NCD
+ ├── Diabetes
+ ├── Cardiac
+ └── Sickle Cell
+```
+
+Only authorized diseases shall be visible.
+
+---
+
+# 73. NCD PATIENT WORKFLOW
+
+```text
+Registration
+     ↓
+NCD Screening
+     ↓
+Risk Assessment
+     ↓
+Clinical Assessment
+     ↓
+Diagnostic Investigation
+     ├── Laboratory
+     ├── ECG
+     ├── Echo
+     └── Radiology
+     ↓
+Diagnosis
+     ↓
+Treatment
+     ↓
+Follow-up Plan
+     ↓
+Scheduled Follow-up
+     ↓
+Clinical Encounter
+     ↓
+Monitoring
+     ↓
+Outcome
+```
+
+---
+
+# 74. DATA QUALITY
+
+The system shall provide:
+
+* Required fields
+* Validation
+* Range checks
+* Date checks
+* Duplicate detection
+* Referential integrity
+* Controlled vocabularies
+* Completeness monitoring
+* Audit trails
+
+Examples:
+
+```text
+Date of birth cannot be in the future.
+
+Laboratory results must use valid formats.
+
+Follow-up dates must follow scheduling rules unless overridden.
+
+Duplicate active patient identifiers shall be prevented.
+```
+
+---
+
+# 75. SYSTEM CONFIGURATION
+
+Authorized administrators may configure:
+
+* NCD diseases
+* Disease protocols
+* Screening forms
+* Clinical questions
+* Laboratory tests
+* Reference ranges
+* Follow-up rules
+* Appointment types
+* Encounter types
+* Roles
+* Permissions
+* Facilities
+* Reporting parameters
+* Notifications
+
+All configuration changes shall be audited.
+
+---
+
+# 76. FUTURE NCD EXTENSIBILITY
+
+Adding a new disease such as:
+
+```text
+Hypertension
+Cancer
+CKD
+Asthma
+COPD
+Epilepsy
+```
+
+shall not require redesigning:
+
+* Patient management
+* Encounters
+* Laboratory
+* Pharmacy
+* ECG
+* Echo
+* Radiology
+* Inventory
+* Follow-up
+* Reporting
+* Access control
+
+The new disease should primarily require configuration of its clinical requirements and workflows.
+
+---
+
+# 77. DEPLOYMENT ARCHITECTURE
+
+Recommended initial architecture:
+
+```text
+                    INTERNET / NIMR NETWORK
+                              │
+                            NGINX
+                              │
+                       Django Application
+                              │
+                 ┌────────────┴────────────┐
+                 │                         │
+             PostgreSQL                  Redis
+                                           │
+                                         Celery
+                                           │
+                                  Background Tasks
+```
+
+The application should initially be deployed as a modular monolith.
+
+Individual modules may later be separated into services if required by scale or operational requirements.
+
+---
+
+# 78. BACKUP AND RECOVERY
+
+The system shall support:
+
+* Automated database backups
+* Backup retention
+* Backup verification
+* Off-site backup where possible
+* Disaster recovery procedures
+* Recovery testing
+
+Clinical data shall not depend on a single server.
+
+---
+
+# 79. SYSTEM MONITORING
+
+Production monitoring shall cover:
+
+* Application health
+* Database health
+* CPU
+* Memory
+* Disk
+* Network
+* Background tasks
+* Failed jobs
+* API errors
+* Authentication failures
+* Database performance
+* Backup status
+
+---
+
+# 80. TESTING REQUIREMENTS
+
+## Unit Testing
+
+Individual functions and services.
+
+## Integration Testing
+
+Interaction between modules.
+
+## Workflow Testing
+
+Complete NCD workflows.
+
+## Access-Control Testing
+
+Verify users cannot access unauthorized:
+
+* Facilities
+* Districts
+* Regions
+* Zones
+* Diseases
+* Modules
+* Actions
+
+## Performance Testing
+
+High-volume patient, clinical and reporting operations.
+
+## Security Testing
+
+Authentication, authorization and common application vulnerabilities.
+
+---
+
+# 81. ACCEPTANCE CRITERIA
+
+The system shall be accepted when:
+
+1. Patients can be registered.
+2. Patients can be searched.
+3. Facilities can be assigned to geographical structures.
+4. Encounters can be created.
+5. Scheduled encounters work.
+6. Unscheduled encounters work independently.
+7. NCD screening works.
+8. Multiple NCD diseases can be managed for one patient.
+9. Disease-specific assessments work.
+10. Laboratory requests and results work.
+11. ECG workflows work.
+12. Echocardiography workflows work.
+13. Radiology workflows work.
+14. Prescriptions and dispensing work.
+15. Inventory management works.
+16. Follow-up scheduling works.
+17. Automatic scheduling works.
+18. Manual scheduling works.
+19. Hybrid scheduling works.
+20. Rolling scheduling works.
+21. Frequency changes work.
+22. Future visit modification works.
+23. Historical visits remain protected.
+24. NCD outcomes can terminate follow-up.
+25. Facility-level access works.
+26. District-level access works.
+27. Regional-level access works.
+28. Zonal-level access works.
+29. Country-level access works.
+30. Disease-level access works.
+31. Module-level access works.
+32. Role permissions work.
+33. Action permissions work.
+34. Dashboards respect access restrictions.
+35. Reports respect access restrictions.
+36. Exports respect access restrictions.
+37. API access respects authorization.
+38. Audit trails are generated.
+39. Data corrections are traceable.
+40. New NCD diseases can be added without redesigning the core system.
+
+---
+
+# 82. FINAL SYSTEM ARCHITECTURE
+
+The final system shall be understood as:
+
+```text
+                         NIMR
+                          │
+                   NCD MANAGEMENT
+                       PLATFORM
+                          │
+       ┌──────────────────┼──────────────────┐
+       │                  │                  │
+    PATIENTS             NCD              REPORTING
+       │              MANAGEMENT              │
+       │                  │                  │
+       │       ┌──────────┼──────────┐       │
+       │       │          │          │       │
+       │    Diabetes    Cardiac   Sickle Cell │
+       │                                       │
+       └──────────────────┬────────────────────┘
+                          │
+                   CLINICAL CORE
+                          │
+      ┌────────┬──────────┼──────────┬───────────┐
+      │        │          │          │           │
+   Patient  Encounter   Triage   Consultation  Diagnosis
+                                      │
+                                    Orders
+                                      │
+          ┌───────────────┬───────────┼───────────────┐
+          │               │           │               │
+     Laboratory          ECG         Echo          Radiology
+          │               │           │               │
+          └───────────────┴───────────┴───────────────┘
+                                      │
+                                  Pharmacy
+                                      │
+                                  Inventory
+                                      │
+                              FOLLOW-UP ENGINE
+                                      │
+                              ACCESS CONTROL
+                                      │
+                 ┌────────────────────┼──────────────────┐
+                 │                    │                  │
+            GEOGRAPHY              DISEASE            MODULE
+                 │                    │                  │
+     Country → Zone → Region      Diabetes          Laboratory
+              → District          Cardiac           Pharmacy
+              → Facility          Sickle Cell       ECG
+                 │                 Future NCDs       Echo
+                 │                                   Radiology
+                 │                                   Inventory
+                 │
+              ROLE + ACTION
+                 │
+       View / Create / Edit /
+       Approve / Export / Configure
+```
+
+---
+
+# 83. CORE DESIGN PRINCIPLE
+
+The NIMR Integrated NCD Management System shall be:
+
+**One NIMR-hosted NCD platform with one shared patient and clinical core, configurable disease-specific workflows, reusable clinical service modules, an automated follow-up engine, and hierarchical access control from facility to national level.**
+
+The architecture deliberately avoids:
+
+* Generic multi-organization tenancy
+* Separate study-level access
+* Separate laboratory systems per disease
+* Separate ECG systems per disease
+* Separate pharmacy systems per disease
+* Hardcoded disease-specific core architectures
+
+Instead, the system uses:
+
+**NIMR → Geography/Facilities → Patients → Encounters → NCD Programs → Clinical Services → Follow-up → Outcomes → Reporting**
+
+with access controlled through:
+
+**Role + Geography/Facility + Disease + Module + Action.**
