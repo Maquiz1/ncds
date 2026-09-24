@@ -1,0 +1,2418 @@
+# Integrated Clinical Management, NCD & Research Management System
+
+## Functional & Technical System Documentation
+
+**Document Type:** System Architecture & Functional Specification
+**Version:** 1.0
+**Initial NCD Programs:** Diabetes, Cardiac/Cardiovascular Conditions, Sickle Cell
+**Platform Direction:** Modular Clinical Management System + NCD Program Management + Research/Clinical Trial Management
+
+---
+
+# 1. System Overview
+
+The proposed system is an integrated platform designed to support:
+
+1. General Hospital/Clinical Management
+2. NCD screening and longitudinal management
+3. Research study and clinical trial management
+4. Flexible follow-up scheduling
+5. Laboratory and diagnostic services
+6. Pharmacy and inventory
+7. Patient longitudinal records
+8. Study participant management
+9. Configurable CRFs and assessments
+10. Reporting, monitoring and data management
+11. Multi-level access across facilities, districts, regions, zones, and the country
+12. Disease-specific access and reporting for national coordinators and authorized users
+
+The system should not treat NCD screening, hospital care, and research as three completely independent systems.
+
+Instead, they should share a **common clinical core** while maintaining separate business workflows where necessary.
+
+Access should be governed by role, organizational level, facility assignment, program, study, and disease. Users may be granted access at the following levels:
+
+```text
+Facility Level
+District Level
+Regional Level
+Zonal Level
+Country Level
+Disease / Program Level
+```
+
+National coordinators should be able to access authorized data across the country and, where permitted, filter or manage information by facility, district, region, zone, disease, NCD program, or research study.
+
+```text
+                         INTEGRATED PLATFORM
+                                │
+          ┌─────────────────────┼─────────────────────┐
+          │                     │                     │
+       HOSPITAL              NCD PROGRAM           RESEARCH
+       CLINICAL              MANAGEMENT            MANAGEMENT
+          │                     │                     │
+          └─────────────────────┼─────────────────────┘
+                                │
+                        SHARED CLINICAL CORE
+                                │
+        ┌───────────────┬───────┼────────┬───────────────┐
+        │               │       │        │               │
+     Patients       Encounters  Orders   Diagnostics   Pharmacy
+        │
+     Triage
+        │
+   Consultation
+        │
+   Diagnosis
+```
+
+The NCD program initially supports:
+
+* Diabetes
+* Cardiac/Cardiovascular conditions
+* Sickle Cell
+
+However, these are **initial configurations**, not hardcoded system limitations. Additional diseases should be added later through configuration.
+
+---
+
+# 2. Core Design Principle
+
+The system should distinguish between:
+
+### Patient lifecycle
+
+```text
+Registration
+     ↓
+Screening / Clinical Assessment
+     ↓
+Diagnosis / Eligibility Assessment
+     ↓
+Enrollment where applicable
+     ↓
+Follow-up
+     ↓
+Outcome / Continuing Care
+```
+
+### Clinical encounter lifecycle
+
+```text
+Appointment / Arrival
+        ↓
+Check-in
+        ↓
+Triage
+        ↓
+Clinical Assessment
+        ↓
+Orders / Requests
+        ↓
+Laboratory / Diagnostics / Pharmacy
+        ↓
+Treatment / Management
+        ↓
+Encounter Completion
+```
+
+### Research lifecycle
+
+```text
+Study
+ ↓
+Screening
+ ↓
+Eligibility
+ ↓
+Enrollment
+ ↓
+Study Visits
+ ↓
+CRFs / Clinical Services
+ ↓
+Follow-up
+ ↓
+Study Outcome
+```
+
+These workflows interact but should not be unnecessarily merged into one linear process.
+
+---
+
+# 3. Patient as the Central Entity
+
+The **Patient** is the central clinical entity.
+
+A patient can:
+
+* Receive normal hospital care
+* Be screened for an NCD
+* Have one or more NCD conditions
+* Attend scheduled follow-up
+* Attend unscheduled visits
+* Be enrolled in a research study
+* Participate in multiple studies where permitted
+* Receive laboratory services
+* Receive imaging
+* Have ECG/Echo
+* Receive medication
+* Be admitted
+* Be referred
+* Have clinical outcomes
+
+The system should maintain one longitudinal patient record.
+
+```text
+PATIENT
+ │
+ ├── Registrations
+ ├── Appointments
+ ├── Encounters
+ ├── Triage
+ ├── Diagnoses
+ ├── Laboratory
+ ├── Radiology
+ ├── ECG
+ ├── Echocardiography
+ ├── Prescriptions
+ ├── Pharmacy
+ ├── NCD Programs
+ └── Research Studies
+```
+
+---
+
+# 4. Hospital/Clinical Management Module
+
+The general clinical system should contain the following major modules.
+
+## 4.1 Patient Management
+
+Functions:
+
+* Patient registration
+* Patient identification
+* Demographics
+* Contact information
+* Address
+* Next of kin
+* Identification documents
+* Patient search
+* Duplicate detection
+* Patient merging according to permissions
+* Patient status
+
+---
+
+# 5. Appointment Management
+
+Appointments should support:
+
+* New appointment
+* Follow-up appointment
+* Specialist appointment
+* Diagnostic appointment
+* Laboratory appointment
+* Pharmacy-related appointment
+* Study visit appointment
+* NCD follow-up appointment
+
+Appointment statuses:
+
+```text
+Scheduled
+Confirmed
+Checked In
+Completed
+Cancelled
+Rescheduled
+No Show
+```
+
+Appointments are not the same as encounters.
+
+A patient may have an appointment but never attend.
+
+---
+
+# 6. Encounter Management
+
+Every actual facility visit should be represented by an **Encounter**.
+
+Examples:
+
+```text
+Scheduled Clinical Encounter
+Unscheduled Clinical Encounter
+Emergency Encounter
+Outpatient Encounter
+Inpatient Encounter
+Research-related Encounter
+NCD Follow-up Encounter
+Diagnostic Encounter
+```
+
+The encounter provides the context for clinical activities.
+
+```text
+PATIENT
+   ↓
+ENCOUNTER
+   ↓
+Triage
+   ↓
+Clinical Assessment
+   ↓
+Orders
+   ↓
+Services
+   ↓
+Treatment
+```
+
+---
+
+# 7. Triage Module
+
+Triage should be encounter-based.
+
+Typical information may include:
+
+* Blood pressure
+* Pulse
+* Respiratory rate
+* Temperature
+* Oxygen saturation
+* Weight
+* Height
+* BMI
+* Pain score
+* Blood glucose where applicable
+* Other configurable measurements
+
+The exact measurements should be configurable by clinical context.
+
+For example, NCD screening may require additional measurements compared with a routine encounter.
+
+---
+
+# 8. Clinical Consultation
+
+The consultation module should capture:
+
+* Chief complaint
+* History
+* Symptoms
+* Clinical examination
+* Assessment
+* Diagnosis
+* Differential diagnosis where required
+* Treatment plan
+* Referral
+* Follow-up plan
+* Clinical notes
+
+Clinical consultation should not contain every laboratory or pharmacy field.
+
+Instead, it creates requests to specialized modules.
+
+---
+
+# 9. Clinical Orders / Requests
+
+A common order/request mechanism should connect clinical encounters to specialized services.
+
+```text
+Encounter
+   │
+   ├── Laboratory Request
+   ├── Radiology Request
+   ├── ECG Request
+   ├── Echocardiography Request
+   ├── Procedure Request
+   └── Pharmacy Prescription
+```
+
+Each operational module then manages its own workflow.
+
+---
+
+# 10. Laboratory Module
+
+Laboratory must be a separate operational module.
+
+Basic workflow:
+
+```text
+Laboratory Request
+       ↓
+Specimen Collection
+       ↓
+Specimen Processing
+       ↓
+Testing
+       ↓
+Result Entry
+       ↓
+Verification
+       ↓
+Final Result
+       ↓
+Report
+```
+
+Potential features:
+
+* Test catalog
+* Panels
+* Specimen types
+* Specimen tracking
+* Reference ranges
+* Result entry
+* Result verification
+* Abnormal/critical results
+* Laboratory reports
+* Quality control
+* Laboratory statistics
+
+The research and NCD systems should request laboratory tests through this module rather than creating separate "research laboratory" systems.
+
+---
+
+# 11. Radiology / Imaging Module
+
+Separate module for:
+
+* X-ray
+* Ultrasound
+* CT
+* MRI
+* Other imaging procedures
+
+Workflow:
+
+```text
+Imaging Request
+      ↓
+Scheduling
+      ↓
+Procedure
+      ↓
+Image/Study
+      ↓
+Radiologist/Clinician Report
+      ↓
+Verification
+```
+
+---
+
+# 12. ECG Module
+
+ECG should have its own workflow.
+
+```text
+ECG Request
+    ↓
+Scheduled / Performed
+    ↓
+ECG Recording
+    ↓
+Interpretation
+    ↓
+Verification
+```
+
+ECG may be requested from:
+
+* Routine clinical care
+* NCD screening
+* Cardiac follow-up
+* Research studies
+
+---
+
+# 13. Echocardiography Module
+
+Echo should similarly remain a separate service.
+
+```text
+Echo Request
+    ↓
+Appointment
+    ↓
+Echo Performed
+    ↓
+Measurements
+    ↓
+Interpretation
+    ↓
+Verification
+    ↓
+Report
+```
+
+---
+
+# 14. Pharmacy Module
+
+Pharmacy should be independent from consultation and research.
+
+Workflow:
+
+```text
+Prescription
+     ↓
+Pharmacy Review
+     ↓
+Dispensing
+     ↓
+Medication Record
+```
+
+The pharmacy module should also support:
+
+* Medicines
+* Suppliers
+* Stock
+* Batches
+* Expiry dates
+* Stock movements
+* Receiving
+* Dispensing
+* Returns
+* Adjustments
+* Low-stock alerts
+* Reports
+
+---
+
+# 15. Inventory Module
+
+Inventory should be an enterprise-wide inventory system rather than pharmacy-only inventory.
+
+It can support:
+
+* Medicines
+* Laboratory supplies
+* Medical consumables
+* Equipment
+* General supplies
+* Stock locations
+* Warehouses
+* Batches
+* Expiry
+* Stock movements
+* Requisitions
+* Transfers
+
+---
+
+# 16. NCD Management Module
+
+NCD management should be a configurable program layer.
+
+Initial diseases:
+
+```text
+NCD PROGRAM
+│
+├── Diabetes
+├── Cardiac / Cardiovascular
+└── Sickle Cell
+```
+
+The system must allow:
+
+```text
++ Add New NCD Disease
+```
+
+Examples of future additions:
+
+* Hypertension
+* Chronic Kidney Disease
+* Cancer
+* Other NCD programs
+
+No major system redesign should be required to add a new disease.
+
+---
+
+# 17. NCD Disease Configuration
+
+Each disease can have its own configuration.
+
+```text
+NCD Disease
+    ↓
+NCD Protocol
+    ↓
+Screening Configuration
+    ↓
+Risk Factors
+    ↓
+Clinical Criteria
+    ↓
+Required Services
+    ↓
+Follow-up Schedule
+    ↓
+CRFs / Assessments
+```
+
+A disease configuration may define:
+
+* Screening questions
+* Risk factors
+* Symptoms
+* Measurements
+* Required laboratory tests
+* ECG requirements
+* Echo requirements
+* Imaging requirements
+* Diagnostic criteria
+* Follow-up rules
+* Outcome definitions
+* Required forms
+
+The exact clinical criteria should be controlled by the approved clinical protocol.
+
+---
+
+# 18. NCD Screening
+
+A patient can be screened for one or more NCDs.
+
+Example:
+
+```text
+Patient
+   │
+   └── NCD Screening
+        │
+        ├── Diabetes       ✓
+        ├── Cardiac        ✓
+        └── Sickle Cell   Not selected
+```
+
+The system should not force every patient through every disease screening pathway.
+
+---
+
+# 19. Screening and Diagnostic Work-up
+
+Screening may require clinical services.
+
+For example:
+
+```text
+NCD Screening
+      ↓
+Risk Assessment
+      ↓
+Clinical Assessment
+      ↓
+Laboratory
+      ↓
+ECG / Echo / Imaging where required
+      ↓
+Assessment
+      ↓
+Screening / Diagnostic Result
+```
+
+The same clinical services are reused elsewhere in the system.
+
+---
+
+# 20. Research Management Module
+
+The research layer should support:
+
+* Studies
+* Protocols
+* Sites
+* Investigators
+* Study staff
+* Screening
+* Eligibility
+* Enrollment
+* Randomization where applicable
+* Study visits
+* CRFs
+* Adverse events
+* Protocol deviations
+* Queries
+* Monitoring
+* Outcomes
+* Study reports
+* Data exports
+
+---
+
+# 21. Study Lifecycle
+
+```text
+Study
+ ↓
+Participant Screening
+ ↓
+Eligibility Assessment
+ ↓
+Eligible / Not Eligible
+ ↓
+Enrollment
+ ↓
+Visit Schedule
+ ↓
+Study Visits
+ ↓
+CRFs + Clinical Services
+ ↓
+Study Outcome
+```
+
+Eligibility must occur before enrollment.
+
+---
+
+# 22. Study Visits
+
+A study visit should be separate from a generic clinical encounter.
+
+A study visit represents a protocol-defined event such as:
+
+```text
+Screening
+Baseline / Day 0
+Day 7
+Day 14
+Month 1
+Month 3
+Month 6
+Month 12
+```
+
+The study visit may generate one or more clinical encounters.
+
+---
+
+# 23. CRF Management
+
+CRFs should not all be mandatory at every visit.
+
+A configurable CRF system should support:
+
+```text
+Study
+  ↓
+Protocol
+  ↓
+Visit Type
+  ↓
+CRF Assignment
+  ↓
+CRF Response
+```
+
+For example:
+
+```text
+Baseline
+├── Demographics
+├── Medical History
+├── Risk Factors
+└── Baseline Assessment
+
+Month 3
+├── Clinical Assessment
+└── Disease-specific CRF
+
+Adverse Event
+└── AE CRF
+```
+
+CRFs can be:
+
+* Participant-level
+* Enrollment-level
+* Visit-level
+* Encounter-level
+* Event-level
+
+---
+
+# 24. Shared Clinical Services and Research
+
+Research should reuse hospital clinical services.
+
+For example:
+
+```text
+Research Study
+     ↓
+Study Visit
+     ↓
+Clinical Request
+     ├── Laboratory
+     ├── ECG
+     ├── Echo
+     ├── Radiology
+     └── Pharmacy
+```
+
+There should not be unnecessary duplicate modules such as:
+
+```text
+Research Laboratory
+Research ECG
+Research Pharmacy
+```
+
+Instead, the normal clinical modules should support research context.
+
+---
+
+# 25. Follow-up Management Engine
+
+The Follow-up Engine is a major shared component.
+
+It should support both:
+
+* NCD management
+* Research studies
+
+and potentially other chronic disease programs.
+
+The engine should separate:
+
+```text
+Follow-up Plan
+        ↓
+Schedule Rule
+        ↓
+Scheduled Visit
+        ↓
+Clinical Encounter
+```
+
+An unscheduled encounter is independent of this chain.
+
+---
+
+# 26. Follow-up Frequency
+
+The system should support:
+
+* Daily
+* Weekly
+* Every N weeks
+* Monthly
+* Every N months
+* Quarterly
+* Yearly
+* Custom schedule
+
+Example:
+
+```text
+Every 1 month
+Every 2 months
+Every 3 months
+Every 6 months
+Every 12 months
+```
+
+---
+
+# 27. Custom Visit Schedule
+
+The system must also support irregular schedules.
+
+Example:
+
+```text
+Baseline       Day 0
+Visit 1        Day 7
+Visit 2        Day 14
+Visit 3        Day 30
+Visit 4        Day 60
+Visit 5        Day 90
+Visit 6        Day 180
+Visit 7        Day 365
+```
+
+This is particularly important for clinical research.
+
+---
+
+# 28. Follow-up Scheduling Mode
+
+The system should provide three scheduling modes:
+
+```text
+Scheduling Mode
+│
+├── Automatic
+├── Manual
+└── Hybrid
+```
+
+---
+
+# 29. Automatic Scheduling
+
+In automatic mode, the system generates future visits according to the configured rules.
+
+Example:
+
+```text
+Frequency: Every 3 months
+Mode: Automatic
+```
+
+The system can generate:
+
+```text
+Baseline
+   ↓
+Month 3
+   ↓
+Month 6
+   ↓
+Month 9
+   ↓
+Month 12
+```
+
+---
+
+# 30. Manual Scheduling
+
+In manual mode, future visits are not automatically generated.
+
+After an encounter, staff select:
+
+**Schedule Next Visit**
+
+and specify:
+
+* Date
+* Visit type
+* Reason
+* Provider/service
+* Location
+* Notes
+
+The next visit is then created manually.
+
+---
+
+# 31. Hybrid Scheduling
+
+Hybrid mode combines automatic generation with staff control.
+
+The system may automatically create future visits while allowing authorized staff to:
+
+* Change dates
+* Reschedule
+* Add extra visits
+* Skip a visit
+* Cancel a planned visit
+* Change future frequency
+* Create an unscheduled visit
+
+This is particularly useful for real-world NCD management.
+
+---
+
+# 32. Automatic Generation Horizon
+
+Automatic scheduling should allow staff to define **how far into the future visits should be generated**.
+
+Example:
+
+```text
+Frequency: Every 3 months
+Generate ahead: 12 months
+```
+
+Another configuration:
+
+```text
+Frequency: Every 1 month
+Generate ahead: 3 months
+```
+
+If the current month is September:
+
+```text
+October   Generated
+November  Generated
+December  Generated
+January   Not yet generated
+```
+
+This prevents the system from unnecessarily generating years of future visits.
+
+---
+
+# 33. Maximum Future Visits
+
+Automatic scheduling should also support a maximum number of future visits.
+
+Example:
+
+```text
+Frequency: Every 1 month
+Generate ahead: 12 months
+Maximum future visits: 3
+```
+
+The system generates only:
+
+```text
+October
+November
+December
+```
+
+When one visit is completed, the system can generate the next future visit.
+
+This creates a **rolling schedule**.
+
+---
+
+# 34. Rolling Automatic Scheduling
+
+Example:
+
+```text
+Maximum future visits = 3
+```
+
+Initially:
+
+```text
+October
+November
+December
+```
+
+October is completed.
+
+The system then generates:
+
+```text
+November
+December
+January
+```
+
+November is completed:
+
+```text
+December
+January
+February
+```
+
+This keeps a controlled number of future visits available.
+
+---
+
+# 35. Follow-up Reference Point
+
+Automatic scheduling must allow selection of the date from which future visits are calculated.
+
+Options:
+
+```text
+Calculate future visits from:
+├── Baseline
+├── Last completed visit
+├── Custom date
+└── Custom month
+```
+
+---
+
+# 36. Baseline Reference
+
+Example:
+
+```text
+Baseline: 10 January 2027
+Frequency: Every 3 months
+```
+
+Generated dates:
+
+```text
+10 April 2027
+10 July 2027
+10 October 2027
+10 January 2028
+```
+
+The schedule remains anchored to baseline.
+
+---
+
+# 37. Last Completed Visit Reference
+
+Example:
+
+```text
+Expected visit: 10 April
+Actual completed visit: 18 April
+```
+
+If the reference rule is:
+
+**Last completed visit**
+
+the next visit is calculated from 18 April.
+
+```text
+18 April
+   ↓ + 3 months
+18 July
+   ↓ + 3 months
+18 October
+```
+
+---
+
+# 38. Custom Reference
+
+Staff may choose a custom date or month.
+
+Example:
+
+```text
+Reference type: Custom
+Reference date: 01 June 2027
+Frequency: Every 3 months
+```
+
+The system generates:
+
+```text
+01 September 2027
+01 December 2027
+01 March 2028
+```
+
+---
+
+# 39. Changing Follow-up Frequency
+
+The system must allow future follow-up frequency to change.
+
+Example:
+
+```text
+Every 3 months
+       ↓
+Clinical decision
+       ↓
+Every 1 month
+```
+
+Later:
+
+```text
+Every 1 month
+       ↓
+Condition stable
+       ↓
+Every 3 months
+```
+
+Changing the frequency should affect **future planned visits**, not historical completed visits.
+
+---
+
+# 40. Changing an Individual Visit
+
+Staff should be able to change a future planned visit.
+
+Example:
+
+```text
+Original:
+15 December
+
+New:
+20 December
+```
+
+The system should record:
+
+* Original date
+* New date
+* Reason
+* User
+* Timestamp
+
+---
+
+# 41. Future Visit Deletion
+
+Future visits with no clinical data should be editable.
+
+Example:
+
+```text
+✓ Baseline — Completed
+○ Month 3 — Planned
+○ Month 6 — Planned
+○ Month 9 — Planned
+```
+
+Month 6 can be:
+
+* Edited
+* Rescheduled
+* Cancelled
+* Deleted
+
+subject to user permissions.
+
+---
+
+# 42. Protection of Historical Data
+
+Once a visit has clinical data, it should not normally be deleted.
+
+Example:
+
+```text
+Month 3
+├── Vitals
+├── Laboratory
+├── Consultation
+├── Diagnosis
+└── Medication
+```
+
+This visit becomes protected.
+
+Instead of deleting it, the system should support:
+
+* Correction
+* Amendment
+* Void/cancel with authorization
+* Audit trail
+
+---
+
+# 43. Visit Statuses
+
+Recommended statuses:
+
+```text
+Planned
+Due
+In Progress
+Completed
+Missed
+Cancelled
+Rescheduled
+Not Applicable
+```
+
+Additional statuses can be introduced if required.
+
+---
+
+# 44. Unscheduled Visits
+
+The system must support visits that are not part of the planned schedule.
+
+Examples:
+
+* New symptoms
+* Complication
+* Adverse event
+* Emergency
+* Medication problem
+* Abnormal laboratory result
+* Referral
+* Walk-in
+* Clinical review
+
+```text
+Unscheduled Encounter
+       ↓
+Triage
+       ↓
+Clinical Assessment
+       ↓
+Orders
+       ↓
+Services
+       ↓
+Treatment / Outcome
+```
+
+---
+
+# 45. Unscheduled Research Visit
+
+A research participant can have an unscheduled encounter without replacing the scheduled study visit.
+
+Example:
+
+```text
+Scheduled:
+Month 3 Study Visit
+
+Additional:
+Unscheduled Visit
+Reason: New symptoms
+```
+
+Both records remain.
+
+This is particularly important for adverse events and clinical safety monitoring.
+
+---
+
+# 46. Missed Visits
+
+A scheduled visit may become:
+
+```text
+Missed
+```
+
+The system should allow authorized staff to:
+
+* Record reason
+* Contact participant
+* Reschedule
+* Mark as not applicable
+* Record loss to follow-up where appropriate
+
+A missed visit should not be confused with an unscheduled visit.
+
+---
+
+# 47. Follow-up Configuration Structure
+
+A configurable follow-up rule can contain:
+
+```text
+FollowUpPlan
+│
+├── Name
+├── Program / Study
+├── Disease
+├── Scheduling Mode
+├── Frequency
+├── Frequency Unit
+├── Reference Point
+├── Generate Ahead
+├── Maximum Future Visits
+├── Start Date
+├── End Date
+├── Number of Visits
+├── Grace Period
+└── Active
+```
+
+---
+
+# 48. Visit Definition
+
+Each visit definition may contain:
+
+```text
+VisitDefinition
+│
+├── Visit Name
+├── Visit Code
+├── Sequence
+├── Relative Timing
+├── Required CRFs
+├── Required Clinical Services
+├── Required Assessments
+├── Required Laboratory
+├── Required Diagnostics
+└── Required Procedures
+```
+
+---
+
+# 49. Patient-Specific Schedule
+
+The actual patient's schedule should be generated from the plan but stored independently.
+
+This is important because staff may modify the patient's future schedule.
+
+```text
+Protocol / NCD Plan
+        ↓
+Schedule Rule
+        ↓
+Patient Schedule
+        ↓
+Patient Visits
+```
+
+Changing the master configuration should not blindly rewrite historical patient schedules.
+
+---
+
+# 50. Follow-up Example — Diabetes
+
+Configuration:
+
+```text
+Disease: Diabetes
+Scheduling Mode: Automatic
+Frequency: Every 3 months
+Reference: Baseline
+Generate ahead: 12 months
+Maximum future visits: 4
+```
+
+Patient:
+
+```text
+Baseline: September 2026
+
+Upcoming:
+December 2026
+March 2027
+June 2027
+September 2027
+```
+
+At December:
+
+```text
+December → Completed
+```
+
+The system generates:
+
+```text
+December → Completed
+March     → Planned
+June      → Planned
+September → Planned
+December  → Newly generated
+```
+
+---
+
+# 51. Follow-up Example — Cardiac
+
+Configuration:
+
+```text
+Frequency: Every 1 month
+Generate ahead: 3 months
+Maximum future visits: 3
+```
+
+The system maintains three upcoming visits.
+
+If the clinician changes the patient to every three months, the future schedule can be recalculated while preserving completed history.
+
+---
+
+# 52. Follow-up Example — Research Study
+
+A research protocol may specify:
+
+```text
+Baseline
+Day 7
+Day 14
+Day 30
+Day 90
+Day 180
+Day 365
+```
+
+This can be configured as a custom schedule rather than forcing a monthly frequency.
+
+---
+
+# 53. Outcome Management
+
+Outcome should be treated as a separate lifecycle/status concept.
+
+Possible statuses include:
+
+```text
+Ongoing
+Completed
+Lost to Follow-up
+Death
+Transfer Out
+Withdrawal
+```
+
+The exact terminology can be configured per study/program.
+
+When an outcome terminates follow-up, future visits may automatically become:
+
+```text
+Not Applicable / Cancelled
+```
+
+with an audit trail.
+
+---
+
+# 54. Data Relationship Model
+
+Core relationship:
+
+```text
+Patient
+  │
+  ├── Encounter
+  │     ├── Triage
+  │     ├── Consultation
+  │     ├── Diagnosis
+  │     └── Orders
+  │
+  ├── NCD Enrollment/Program
+  │     └── Follow-up Plan
+  │           └── Scheduled Visits
+  │
+  └── Study Enrollment
+        └── Study Visit Schedule
+              └── Study Visits
+```
+
+Clinical services:
+
+```text
+Order
+ ├── Laboratory
+ ├── Radiology
+ ├── ECG
+ ├── Echo
+ └── Pharmacy
+```
+
+---
+
+# 55. Recommended Django Domain Structure
+
+For a modular monolith, a structure such as the following is appropriate:
+
+```text
+apps/
+│
+├── core/
+├── users/
+├── access_control/
+├── organizations/
+├── facilities/
+├── geography/
+├── patients/
+├── registration/
+├── appointments/
+├── encounters/
+├── triage/
+├── clinical/
+├── diagnoses/
+│
+├── orders/
+├── laboratory/
+├── radiology/
+├── ecg/
+├── echocardiography/
+├── pharmacy/
+├── inventory/
+│
+├── ncd/
+│   ├── diseases/
+│   ├── screening/
+│   ├── assessments/
+│   └── followup/
+│
+├── research/
+│   ├── studies/
+│   ├── protocols/
+│   ├── screening/
+│   ├── eligibility/
+│   ├── enrollment/
+│   ├── visits/
+│   ├── crfs/
+│   ├── adverse_events/
+│   ├── deviations/
+│   └── outcomes/
+│
+├── referrals/
+├── admissions/
+├── billing/
+├── reporting/
+└── audit/
+```
+
+The exact Django app boundaries can be adjusted during implementation. The important part is maintaining clear domain boundaries and enforcing access according to organizational hierarchy and disease/program permissions.
+
+---
+
+# 56. Suggested Core Data Entities
+
+## Patient
+
+```text
+Patient
+- id
+- patient_number
+- demographics
+- identifiers
+- contacts
+- address
+- status
+```
+
+## Organization and Geographic Hierarchy
+
+```text
+Country
+- id
+- name
+
+Zone
+- id
+- country
+- name
+
+Region
+- id
+- zone
+- name
+
+District
+- id
+- region
+- name
+
+Facility
+- id
+- district
+- name
+- facility_type
+- active
+```
+
+## User Access Assignment
+
+```text
+UserAccessAssignment
+- user
+- role
+- access_level
+- country
+- zone
+- region
+- district
+- facility
+- disease
+- program
+- study
+- can_view
+- can_create
+- can_edit
+- can_approve
+- can_export
+- active
+```
+
+## Encounter
+
+```text
+Encounter
+- id
+- patient
+- encounter_type
+- encounter_date
+- facility
+- provider
+- status
+```
+
+## NCD Disease
+
+```text
+NCDDisease
+- id
+- code
+- name
+- description
+- active
+```
+
+## NCD Protocol
+
+```text
+NCDProtocol
+- id
+- disease
+- name
+- version
+- effective_date
+- active
+```
+
+## NCD Screening
+
+```text
+NCDScreening
+- patient
+- disease
+- encounter
+- protocol
+- status
+- result
+- facility
+- district
+- region
+- zone
+- country
+```
+
+## Follow-up Plan
+
+```text
+FollowUpPlan
+- name
+- context
+- scheduling_mode
+- frequency
+- frequency_unit
+- reference_type
+- generate_ahead
+- max_future_visits
+- start_date
+- end_date
+- active
+```
+
+## Scheduled Visit
+
+```text
+ScheduledVisit
+- patient
+- plan
+- visit_type
+- scheduled_date
+- status
+- source
+- generated_automatically
+- facility
+- disease
+- program
+- study
+```
+
+## Encounter
+
+```text
+Encounter
+- patient
+- scheduled_visit
+- encounter_type
+- date
+- status
+- facility
+```
+
+The scheduled visit may be null for an unscheduled encounter.
+
+---
+
+# 57. Automatic Scheduling Algorithm
+
+Conceptually:
+
+```text
+1. Identify active follow-up plan
+2. Identify patient's reference date
+3. Identify existing future planned visits
+4. Calculate generation window
+5. Calculate maximum allowed future visits
+6. Generate missing visits
+7. Do not duplicate existing visits
+8. Do not modify completed visits
+9. Apply current active scheduling rules
+10. Record audit information
+```
+
+Example:
+
+```text
+Maximum future visits = 3
+
+Existing:
+Nov
+Dec
+Jan
+
+Completed:
+Oct
+```
+
+No new visit is generated because three future visits already exist.
+
+After November is completed:
+
+```text
+Dec
+Jan
+Feb ← generated
+```
+
+---
+
+# 58. Audit Trail
+
+The system should maintain an audit trail for important changes.
+
+Examples:
+
+```text
+Visit created
+Visit date changed
+Frequency changed
+Reference date changed
+Visit deleted
+Visit cancelled
+Visit rescheduled
+CRF modified
+Laboratory result amended
+Diagnosis changed
+Outcome changed
+User access granted
+User access revoked
+Access scope changed
+Disease access changed
+Report exported
+```
+
+Audit information:
+
+```text
+User
+Timestamp
+Action
+Old value
+New value
+Reason
+IP/device where appropriate
+```
+
+---
+
+# 59. Role-Based and Scope-Based Access Control
+
+Access control should combine:
+
+1. User role
+2. Organizational scope
+3. Disease or program scope
+4. Study scope
+5. Facility assignment
+6. Data sensitivity
+7. Action permissions
+
+Suggested roles:
+
+```text
+System Administrator
+National Coordinator
+Country Program Manager
+Zonal Coordinator
+Regional Coordinator
+District Coordinator
+Hospital Administrator
+Facility Manager
+Doctor / Clinician
+Nurse
+Triage Staff
+Laboratory Staff
+Radiology Staff
+ECG Technician
+Echo Technician
+Pharmacist
+Data Manager
+Research Coordinator
+Study Investigator
+Monitor
+Data Clerk
+Reviewer
+```
+
+## 59.1 Organizational Access Levels
+
+The system should support the following access levels:
+
+```text
+Facility Level
+District Level
+Regional Level
+Zonal Level
+Country Level
+```
+
+### Facility-level users
+
+Facility-level users may access data for their assigned facility or facilities only.
+
+They may manage:
+
+* Patient registration
+* Encounters
+* Clinical services
+* Facility-level NCD activities
+* Facility-level research activities
+* Facility reports
+
+### District-level users
+
+District-level users may access authorized data from facilities within their assigned district.
+
+They may:
+
+* View aggregated district reports
+* Monitor facility performance
+* Review NCD screening and follow-up
+* Monitor disease-specific indicators
+* Access patient-level data only where explicitly authorized
+* Support district-level coordination
+
+### Regional-level users
+
+Regional-level users may access authorized data from districts and facilities within their assigned region.
+
+They may:
+
+* Monitor regional performance
+* Compare districts and facilities
+* Review disease-specific trends
+* Manage regional programs
+* Generate regional reports
+
+### Zonal-level users
+
+Zonal-level users may access authorized data from regions, districts, and facilities within their assigned zone.
+
+They may:
+
+* Monitor zone-wide performance
+* Compare regions and districts
+* Review disease and program indicators
+* Coordinate zonal activities
+* Generate zonal reports
+
+### Country-level users and national coordinators
+
+Country-level users, including national coordinators, may access authorized data across the country.
+
+They may:
+
+* View national dashboards
+* Compare zones, regions, districts, and facilities
+* Monitor national NCD programs
+* Review disease-specific indicators
+* Manage national protocols and configurations where authorized
+* Generate national reports
+* Export approved national datasets
+* Monitor research studies across participating sites
+* Access patient-level data only when explicitly permitted by governance and privacy rules
+
+## 59.2 Disease-Level Access
+
+Users may also be assigned access to one or more diseases or programs.
+
+Examples:
+
+```text
+Diabetes
+Cardiac / Cardiovascular
+Sickle Cell
+Hypertension
+Chronic Kidney Disease
+Cancer
+```
+
+Disease-level access may be combined with organizational scope.
+
+Examples:
+
+```text
+Diabetes — Facility Level
+Cardiac — District Level
+Sickle Cell — Regional Level
+All NCDs — Country Level
+```
+
+A user assigned to **Diabetes at regional level** may access authorized diabetes data across facilities and districts within the assigned region but should not automatically access cardiac or sickle cell data.
+
+A national coordinator assigned to **all NCDs at country level** may access authorized NCD data across all facilities, districts, regions, and zones.
+
+## 59.3 Access Scope Rules
+
+The system should enforce the following rules:
+
+```text
+User access = Role + Organizational Scope + Disease/Program Scope + Study Scope
+```
+
+A user should only access data when all required conditions are satisfied.
+
+For example:
+
+```text
+User:
+Role: Regional NCD Coordinator
+Scope: Region A
+Disease: Diabetes
+
+Allowed:
+- Diabetes data from facilities in Region A
+- Diabetes reports for districts in Region A
+- Diabetes regional dashboard
+
+Not automatically allowed:
+- Cardiac data
+- Sickle Cell data
+- Diabetes data from Region B
+- Unrelated research data
+- Patient-level data without explicit permission
+```
+
+## 59.4 Access to Patient-Level and Aggregate Data
+
+The system should distinguish between:
+
+```text
+Patient-Level Data
+Aggregate Data
+De-identified Data
+```
+
+Access to aggregate data may be broader than access to identifiable patient-level data.
+
+For example:
+
+* A national coordinator may view national diabetes statistics.
+* A regional coordinator may view regional trends.
+* A district coordinator may view district-level indicators.
+* Facility clinicians may view identifiable patient records for their assigned facility.
+* Patient-level cross-facility access should require explicit authorization.
+
+## 59.5 Data Filtering
+
+Dashboards, reports, searches, and exports should automatically apply the user's access scope.
+
+Available filters may include:
+
+```text
+Country
+Zone
+Region
+District
+Facility
+Disease
+NCD Program
+Research Study
+Date Range
+Patient Status
+Visit Status
+```
+
+Users should not be able to select organizational units or diseases outside their assigned permissions.
+
+---
+
+# 60. Patient vs Research Data
+
+The system should maintain a shared patient identity while protecting study-specific information.
+
+```text
+Patient
+   │
+   ├── Hospital Care
+   │
+   ├── NCD Program
+   │
+   └── Research Study
+```
+
+Research users should only see study information according to their permissions.
+
+Organizational and disease-level access must also apply to research data.
+
+For example:
+
+* A study coordinator may access participants at assigned facilities.
+* A national research coordinator may access authorized study data across the country.
+* A disease program coordinator may access disease-specific NCD data but not unrelated study data.
+* A monitor may access only assigned studies and sites.
+
+---
+
+# 61. Reporting
+
+The reporting layer should support:
+
+### Hospital
+
+* Daily attendance
+* Encounters
+* Diagnoses
+* Laboratory workload
+* Pharmacy utilization
+* Referrals
+* Admissions
+* Discharges
+* Facility-level performance
+
+### NCD
+
+* Number screened
+* Disease-specific screening
+* Positive screens
+* Confirmed cases
+* Follow-up attendance
+* Missed visits
+* Outcomes
+* Disease trends
+* Facility comparisons
+* District comparisons
+* Regional comparisons
+* Zonal comparisons
+* National summaries
+
+### Research
+
+* Screened participants
+* Eligible participants
+* Enrolled participants
+* Visit completion
+* Missing visits
+* CRF completion
+* Adverse events
+* Protocol deviations
+* Loss to follow-up
+* Study outcomes
+* Site performance
+* District, regional, zonal, and national study summaries where authorized
+
+Reports must respect the user's organizational, disease, program, and study permissions.
+
+---
+
+# 62. Dashboard Structure
+
+## Hospital Dashboard
+
+```text
+Today's Patients
+Today's Encounters
+Appointments
+Admissions
+Laboratory
+Pharmacy
+Alerts
+Facility Performance
+```
+
+## NCD Dashboard
+
+```text
+Patients Screened
+Diabetes
+Cardiac
+Sickle Cell
+Follow-up Due
+Missed Visits
+Unscheduled Visits
+Outcomes
+Facility Performance
+District Performance
+Regional Performance
+Zonal Performance
+National Summary
+```
+
+## Research Dashboard
+
+```text
+Studies
+Participants
+Screened
+Eligible
+Enrolled
+Visits Due
+Visits Missed
+CRF Completion
+Adverse Events
+Queries
+Site Performance
+District Summary
+Regional Summary
+Zonal Summary
+National Summary
+```
+
+Dashboard content should be filtered automatically according to the user's access level and disease permissions.
+
+---
+
+# 63. Patient Chart
+
+The patient chart should provide a longitudinal view.
+
+```text
+PATIENT CHART
+│
+├── Overview
+├── Demographics
+├── Encounters
+├── Triage / Vitals
+├── Diagnoses
+├── Laboratory
+├── Radiology
+├── ECG
+├── Echocardiography
+├── Medications
+├── NCD
+├── Research Studies
+└── Timeline
+```
+
+Patient-level access must be restricted according to facility, organizational scope, role, disease, program, and study permissions.
+
+---
+
+# 64. NCD Patient View
+
+Example:
+
+```text
+Patient
+ │
+ └── NCD
+      │
+      ├── Diabetes
+      │    ├── Screening
+      │    ├── Assessment
+      │    ├── Follow-up
+      │    └── Outcomes
+      │
+      └── Cardiac
+           ├── Screening
+           ├── Assessment
+           ├── Follow-up
+           └── Outcomes
+```
+
+Users should only see disease sections for which they have permission.
+
+---
+
+# 65. Research Participant View
+
+```text
+Study Participant
+│
+├── Summary
+├── Screening
+├── Eligibility
+├── Enrollment
+├── Scheduled Visits
+├── Completed Visits
+├── CRFs
+├── Laboratory
+├── Diagnostics
+├── Adverse Events
+├── Protocol Deviations
+└── Outcomes
+```
+
+The participant view should be restricted by study, site, facility, organizational level, disease, and user role.
+
+---
+
+# 66. Important Scheduling Rules
+
+The system should enforce these principles:
+
+### Rule 1
+
+A future planned visit can be changed according to permissions.
+
+### Rule 2
+
+A future planned visit with no data can be deleted if permitted.
+
+### Rule 3
+
+Completed visits should not normally be deleted.
+
+### Rule 4
+
+Historical clinical/research data must remain auditable.
+
+### Rule 5
+
+Changing frequency should affect future scheduling, not rewrite history.
+
+### Rule 6
+
+Unscheduled encounters can occur at any time.
+
+### Rule 7
+
+An unscheduled encounter should not automatically replace a scheduled study visit.
+
+### Rule 8
+
+Automatic scheduling must avoid duplicate visits.
+
+### Rule 9
+
+Maximum future visits must be respected.
+
+### Rule 10
+
+Generation horizon must be respected.
+
+### Rule 11
+
+Baseline, last completed visit, and custom date/month must be supported as reference points.
+
+### Rule 12
+
+Users may only view or modify schedules within their assigned facility, organizational level, disease, program, or study scope.
+
+### Rule 13
+
+National coordinators may access country-wide data only when their role and permissions authorize it.
+
+### Rule 14
+
+Disease-level access must be enforced independently from organizational-level access.
+
+---
+
+# 67. Overall Architecture
+
+The final conceptual architecture is:
+
+```text
+                         INTEGRATED PLATFORM
+                                │
+        ┌───────────────────────┼────────────────────────┐
+        │                       │                        │
+      HMS                    NCD PROGRAM              RESEARCH
+        │                       │                        │
+        │                ┌──────┼──────┐                 │
+        │                │      │      │                 │
+        │             Diabetes Cardiac Sickle Cell       │
+        │                       │                        │
+        └───────────────────────┼────────────────────────┘
+                                │
+                        CLINICAL CORE
+                                │
+        ┌─────────┬─────────┬───┴────┬────────┬─────────┐
+        │         │         │        │        │         │
+     Patient  Encounter  Triage  Consultation Orders  Diagnosis
+                                      │
+             ┌────────────────────────┼────────────────────┐
+             │                        │                    │
+          Laboratory              Diagnostics           Pharmacy
+             │                        │                    │
+             │                  ┌─────┴─────┐              │
+             │                  │     │     │              │
+          Results             ECG   Echo  Radiology      Medication
+                               
+                                │
+                       FOLLOW-UP ENGINE
+                                │
+               ┌────────────────┴────────────────┐
+               │                                 │
+          NCD Follow-up                     Study Follow-up
+               │                                 │
+        Automatic / Manual / Hybrid       Automatic / Manual / Hybrid
+                                │
+                       ACCESS CONTROL LAYER
+                                │
+        ┌───────────────┬───────────────┬───────────────┐
+        │               │               │               │
+     Facility        District        Regional        Zonal
+        │               │               │               │
+        └───────────────┴───────────────┴───────────────┘
+                                │
+                         Country / National
+                                │
+                    Disease and Program Scope
+```
+
+---
+
+# 68. Final Functional Principle
+
+The system should be built around the following model:
+
+```text
+PATIENT
+   ↓
+CONTEXT
+   ├── Hospital Care
+   ├── NCD Program
+   └── Research Study
+          ↓
+       ENCOUNTER / STUDY VISIT
+          ↓
+       CLINICAL ACTIVITIES
+          ├── Triage
+          ├── Consultation
+          ├── Laboratory
+          ├── ECG
+          ├── Echo
+          ├── Radiology
+          ├── Pharmacy
+          └── Other Services
+          ↓
+       FOLLOW-UP PLAN
+          ↓
+       SCHEDULED VISITS
+          │
+          ├── Automatic
+          ├── Manual
+          └── Hybrid
+          │
+          ├── Frequency
+          ├── Reference Point
+          ├── Generate Ahead
+          └── Maximum Future Visits
+          ↓
+       OUTCOMES
+```
+
+The central architectural rule is:
+
+> **Clinical services are reusable, while NCD programs and research protocols define how those services are used.**
+
+The access-control rule is:
+
+> **Users access data according to their role, facility or organizational level, disease or program assignment, study assignment, and approved permissions.**
+
+This allows the same platform to support today's **Diabetes, Cardiac, and Sickle Cell programs**, future NCDs, general hospital care, and clinical research without rebuilding the underlying system, while enabling authorized users and national coordinators to work effectively at facility, district, regional, zonal, country, and disease-specific levels.
